@@ -29,6 +29,17 @@ tests = [
 ]
 
 
+def sig(x):
+    return 1/(1 + np.exp(-x))
+
+
+def dot(arr1, arr2):
+    total = 0
+    for ind, elem in enumerate(arr1):
+        total += (elem * arr2[ind])
+    return total
+
+
 class BinaryClassification(Enum):
     POSITIVE = 1,
     NEGATIVE = -1
@@ -63,7 +74,25 @@ class BinaryPerceptron:
 
 class LogisticRegression:
     def __init__(self, values: str):
-        pass
+        self.weights: list[float] = [0, 0]  # parameters
+        self.learning_rate = 0.1
+        split_values = values.split('(')[1:]
+        for i in range(100):
+            self.weights[0] = self.weights[0] + \
+                self.learning_rate * self.compute_log_loss(split_values, 0)
+            self.weights[1] = self.weights[1] + self.learning_rate * \
+                self.compute_log_loss(split_values, 1)
+
+        print(self.weights)
+
+    def compute_log_loss(self, values: list[str], jth_feature: int):
+        the_sum = 0
+        for each_value in values:
+            split_inp = re.sub(r'[+() ]+', '', each_value).split(',')
+            classif = int(split_inp[-1])
+            the_sum += (int(classif) - sig(dot(self.weights,
+                        [int(split_inp[0]), int(split_inp[1])]))) * int(split_inp[jth_feature])
+        return the_sum
 
 
 def process_inp(inpt: str) -> tuple[ClassificationType, str]:
@@ -73,7 +102,10 @@ def process_inp(inpt: str) -> tuple[ClassificationType, str]:
 
 def main(inp=False):
     if inp:
-        line = input()
+        processed_inp = process_inp(input())
+        if processed_inp[0] == ClassificationType.PERCEPTRON:
+            weights = BinaryPerceptron(processed_inp[1]).get_weights()
+            print(weights)
     else:
         ut = TestCase()
         for each_test in tests:
@@ -81,9 +113,12 @@ def main(inp=False):
             processed_inp = process_inp(given)
             if processed_inp[0] == ClassificationType.PERCEPTRON:
                 print(f'----- TESTING {given} -----')
-                perceptron = BinaryPerceptron(processed_inp[1]).get_weights()
-                ut.assertEqual(perceptron, expected)
+                weights = BinaryPerceptron(processed_inp[1]).get_weights()
+                ut.assertEqual(weights, expected)
                 print(f'----- PASSED {given} ------')
+            else:
+                print(f'------ TESTING ------')
+                weights = LogisticRegression(processed_inp[1])
 
 
 if __name__ == '__main__':
