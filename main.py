@@ -1,5 +1,7 @@
 from unittest import TestCase
 from enum import Enum
+import numpy as np
+import re
 
 
 tests = [
@@ -27,6 +29,48 @@ tests = [
 ]
 
 
+class BinaryClassification(Enum):
+    POSITIVE = 1,
+    NEGATIVE = -1
+
+
+class ClassificationType(Enum):
+    PERCEPTRON = 0,
+    LOG_REG = 1
+
+
+class BinaryPerceptron:
+    def __init__(self, values: str):
+        self.weights = [0, 0]
+        split_values = values.split('(')[1:]
+        for i in range(100):
+            for each_value in split_values:
+                split_inp = re.sub(r'[+() ]+', '', each_value).split(',')
+                classif = int(split_inp[-1])
+                x1 = int(split_inp[0])
+                x2 = int(split_inp[1])
+                computed_y = (self.weights[0] * x1) + (self.weights[1] * x2)
+                computed_classif = 1 if computed_y >= 0 else -1
+                if computed_classif == classif:
+                    continue
+                else:
+                    self.weights[0] = self.weights[0] + (classif * x1)
+                    self.weights[1] = self.weights[1] + (classif * x2)
+
+    def get_weights(self):
+        return '{:.1f}, {:.1f}'.format(self.weights[0], self.weights[1])
+
+
+class LogisticRegression:
+    def __init__(self, values: str):
+        pass
+
+
+def process_inp(inpt: str) -> tuple[ClassificationType, str]:
+    spl_inp = inpt.split(' ')
+    return (ClassificationType.PERCEPTRON if spl_inp[0] == 'P' else ClassificationType.LOG_REG, inpt[2:])
+
+
 def main(inp=False):
     if inp:
         line = input()
@@ -34,7 +78,12 @@ def main(inp=False):
         ut = TestCase()
         for each_test in tests:
             [given, expected] = each_test
-            # plug into func
+            processed_inp = process_inp(given)
+            if processed_inp[0] == ClassificationType.PERCEPTRON:
+                print(f'----- TESTING {given} -----')
+                perceptron = BinaryPerceptron(processed_inp[1]).get_weights()
+                ut.assertEqual(perceptron, expected)
+                print(f'----- PASSED {given} ------')
 
 
 if __name__ == '__main__':
